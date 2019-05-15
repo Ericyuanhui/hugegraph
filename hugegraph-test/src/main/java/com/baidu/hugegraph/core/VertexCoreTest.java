@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.core;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -192,6 +193,122 @@ public class VertexCoreTest extends BaseCoreTest {
             graph.addVertex(T.label, "person", "name", "Baby",
                             "city", "Hongkong", "age", "should-be-int");
         });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            graph.addVertex(T.label, "person", "name", "Baby",
+                            "city", "Hongkong", "age", 18.0);
+        });
+    }
+
+    @Test
+    public void testAddVertexWithInvalidPropertValueOfInt() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("int").asInt().create();
+        schema.vertexLabel("number").properties("int").create();
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            long value = Integer.MAX_VALUE + 1L;
+            graph.addVertex(T.label, "number", "int", value);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            long value = Integer.MIN_VALUE - 1L;
+            graph.addVertex(T.label, "number", "int", value);
+        });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            graph.addVertex(T.label, "number", "int", Long.MAX_VALUE);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            graph.addVertex(T.label, "number", "int", Long.MIN_VALUE);
+        });
+    }
+
+    @Test
+    public void testAddVertexWithInvalidPropertValueOfLong() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("long").asLong().create();
+        schema.vertexLabel("number").properties("long").create();
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigDecimal one = new BigDecimal(1);
+            BigDecimal value = new BigDecimal(Long.MAX_VALUE).add(one);
+            graph.addVertex(T.label, "number", "long", value);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigDecimal one = new BigDecimal(-1);
+            BigDecimal value = new BigDecimal(Long.MIN_VALUE).add(one);
+            graph.addVertex(T.label, "number", "long", value);
+        });
+    }
+
+    @Test
+    public void testAddVertexWithInvalidPropertValueOfFloat() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("float").asFloat().create();
+        schema.vertexLabel("number").properties("float").create();
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            double value = Float.MAX_VALUE * 2.0d;
+            graph.addVertex(T.label, "number", "float", value);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            double value = -(Float.MAX_VALUE * 2.0d);
+            graph.addVertex(T.label, "number", "float", value);
+        });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            graph.addVertex(T.label, "number", "float", Double.MAX_VALUE);
+        });
+
+        double value = Float.MIN_VALUE / 2.0d;
+        float fvalue = graph.addVertex(T.label, "number", "float", value)
+                            .value("float");
+        Assert.assertEquals(0.0f, fvalue, 0.0d);
+
+        fvalue = graph.addVertex(T.label, "number", "float", -value)
+                      .value("float");
+        Assert.assertEquals(0.0f, fvalue, 0.0d);
+
+        fvalue = graph.addVertex(T.label, "number", "float", Double.MIN_VALUE)
+                      .value("float");
+        Assert.assertEquals(0.0f, fvalue, 0.0d);
+    }
+
+    @Test
+    public void testAddVertexWithInvalidPropertValueOfDouble() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("double").asDouble().create();
+        schema.vertexLabel("number").properties("double").create();
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigDecimal two = new BigDecimal(2);
+            BigDecimal value = new BigDecimal(Double.MAX_VALUE).multiply(two);
+            graph.addVertex(T.label, "number", "double", value);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigDecimal two = new BigDecimal(2);
+            BigDecimal value = new BigDecimal(-Double.MAX_VALUE).multiply(two);
+            graph.addVertex(T.label, "number", "double", value);
+        });
+
+        BigDecimal two = new BigDecimal(2);
+        BigDecimal value = new BigDecimal(Double.MIN_VALUE).divide(two);
+        double dvalue = graph.addVertex(T.label, "number", "double", value)
+                             .value("double");
+        Assert.assertEquals(0.0d, dvalue, 0.0d);
+
+        value = new BigDecimal(-Double.MIN_VALUE).divide(two);
+        dvalue = graph.addVertex(T.label, "number", "double", value)
+                      .value("double");
+        Assert.assertEquals(0.0d, dvalue, 0.0d);
     }
 
     @Test
@@ -1011,8 +1128,8 @@ public class VertexCoreTest extends BaseCoreTest {
         init10Vertices();
 
         List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("language").hasValue(true)
-                                .toList();
+                                     .hasLabel("language").hasValue(true)
+                                     .toList();
         Assert.assertEquals(1, vertexes.size());
         assertContains(vertexes,
                        T.label, "language", "name", "python",
@@ -1044,9 +1161,9 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(true);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("city", "Taipei")
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("city", "Taipei")
+                                     .toList();
 
         Assert.assertEquals(1, vertexes.size());
         assertContains(vertexes,
@@ -1063,9 +1180,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(true);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("city", "Beijing")
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("city", "Beijing").toList();
 
         Assert.assertEquals(3, vertexes.size());
 
@@ -1087,8 +1203,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", 19).toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", 19).toList();
 
         Assert.assertEquals(1, vertexes.size());
         assertContains(vertexes,
@@ -1103,8 +1219,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", 20).toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", 20).toList();
 
         Assert.assertEquals(2, vertexes.size());
 
@@ -1123,8 +1239,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", 18).toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", 18).toList();
 
         Assert.assertEquals(0, vertexes.size());
     }
@@ -1136,9 +1252,8 @@ public class VertexCoreTest extends BaseCoreTest {
         HugeGraph graph = graph();
         initPersonIndex(false);
         init5Persons();
-        List<Vertex> vertexes;
 
-        vertexes = graph.traversal().V().has("age", 21).toList();
+        List<Vertex> vertexes = graph.traversal().V().has("age", 21).toList();
         Assert.assertEquals(1, vertexes.size());
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
@@ -1151,15 +1266,65 @@ public class VertexCoreTest extends BaseCoreTest {
     }
 
     @Test
+    public void testQueryByIntPropWithNegativeNumber() {
+        HugeGraph graph = graph();
+        initPersonIndex(false);
+
+        graph.addVertex(T.label, "person", "name", "Louise",
+                        "city", "Hongkong", "age", 17,
+                        "birth", Utils.date("2012-01-01"));
+        graph.addVertex(T.label, "person", "name", "Sean",
+                        "city", "Beijing", "age", -10,
+                        "birth", Utils.date("2029-01-01"));
+
+        List<Vertex> vertexes = graph.traversal().V().has("age", -10).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes,
+                       T.label, "person", "name", "Sean",
+                       "city", "Beijing", "age", -10,
+                       "birth", Utils.date("2029-01-01"));
+
+        vertexes = graph.traversal().V()
+                        .has("age", P.between(-11, 0))
+                        .toList();
+        Assert.assertEquals(1, vertexes.size());
+        Assert.assertEquals("Sean", vertexes.get(0).value("name"));
+
+        vertexes = graph.traversal().V().has("age", P.gt(-11)).toList();
+        Assert.assertEquals(2, vertexes.size());
+
+        vertexes = graph.traversal().V().has("age", P.gte(-10)).toList();
+        Assert.assertEquals(2, vertexes.size());
+
+        vertexes = graph.traversal().V().has("age", P.gt(-10)).toList();
+        Assert.assertEquals(1, vertexes.size());
+        Assert.assertEquals("Louise", vertexes.get(0).value("name"));
+
+        vertexes = graph.traversal().V().has("age", P.gt(-9)).toList();
+        Assert.assertEquals(1, vertexes.size());
+        Assert.assertEquals("Louise", vertexes.get(0).value("name"));
+
+        vertexes = graph.traversal().V().has("age", P.lt(-10)).toList();
+        Assert.assertEquals(0, vertexes.size());
+
+        vertexes = graph.traversal().V().has("age", P.lte(-10)).toList();
+        Assert.assertEquals(1, vertexes.size());
+        Assert.assertEquals("Sean", vertexes.get(0).value("name"));
+
+        vertexes = graph.traversal().V().has("age", P.lt(0)).toList();
+        Assert.assertEquals(1, vertexes.size());
+        Assert.assertEquals("Sean", vertexes.get(0).value("name"));
+    }
+
+    @Test
     public void testQueryByIntPropUsingLtWithOneResult() {
         // age < 19
         HugeGraph graph = graph();
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                               .hasLabel("person").has("age", P.lt(19))
-                               .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.lt(19)).toList();
 
         Assert.assertEquals(1, vertexes.size());
         assertContains(vertexes,
@@ -1174,9 +1339,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", P.lt(21))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.lt(21)).toList();
 
         Assert.assertEquals(4, vertexes.size());
     }
@@ -1188,9 +1352,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                     .hasLabel("person").has("age", P.lte(20))
-                                     .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.lte(20)).toList();
 
         Assert.assertEquals(4, vertexes.size());
     }
@@ -1202,9 +1365,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", P.gt(20))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.gt(20)).toList();
 
         Assert.assertEquals(1, vertexes.size());
     }
@@ -1216,9 +1378,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                     .hasLabel("person").has("age", P.gt(1))
-                                     .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.gt(1)).toList();
 
         Assert.assertEquals(5, vertexes.size());
     }
@@ -1230,9 +1391,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", P.gt(30))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.gt(30)).toList();
 
         Assert.assertEquals(0, vertexes.size());
     }
@@ -1244,9 +1404,8 @@ public class VertexCoreTest extends BaseCoreTest {
         initPersonIndex(false);
         init5Persons();
 
-        List<Vertex> vertexes = graph.traversal().V()
-                                     .hasLabel("person").has("age", P.gte(20))
-                                     .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.gte(20)).toList();
 
         Assert.assertEquals(3, vertexes.size());
     }
@@ -1260,9 +1419,8 @@ public class VertexCoreTest extends BaseCoreTest {
         init5Persons();
 
         // 3 < age && age < 20 (that's age == 19)
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person").has("age", P.inside(3, 20))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.inside(3, 20)).toList();
 
         Assert.assertEquals(1, vertexes.size());
         Assert.assertEquals(19, vertexes.get(0).property("age").value());
@@ -1277,25 +1435,20 @@ public class VertexCoreTest extends BaseCoreTest {
         init5Persons();
 
         // 19 < age && age < 21 (that's age == 20)
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person")
-                                .has("age", P.inside(19, 21))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.inside(19, 21)).toList();
 
         Assert.assertEquals(2, vertexes.size());
 
         // 3 < age && age < 21 (that's age == 19 or age == 20)
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.inside(3, 21))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.inside(3, 21)).toList();
 
         Assert.assertEquals(3, vertexes.size());
 
         // 0 < age && age < 22 (that's all)
-        vertexes = graph.traversal().V()
-                   .hasLabel("person")
-                   .has("age", P.inside(0, 22))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.inside(0, 22)).toList();
 
         Assert.assertEquals(5, vertexes.size());
     }
@@ -1309,39 +1462,32 @@ public class VertexCoreTest extends BaseCoreTest {
         init5Persons();
 
         // 3 < age && age < 19
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person")
-                                .has("age", P.inside(3, 19))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.inside(3, 19)).toList();
 
         Assert.assertEquals(0, vertexes.size());
 
         // 0 < age && age < 3
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.inside(0, 3))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.inside(0, 3)).toList();
 
         Assert.assertEquals(0, vertexes.size());
 
         // 20 < age && age < 21
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.inside(20, 21))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.inside(20, 21)).toList();
 
         Assert.assertEquals(0, vertexes.size());
 
         // 21 < age && age < 25
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.inside(21, 25))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.inside(21, 25)).toList();
 
         Assert.assertEquals(0, vertexes.size());
 
         // 21 < age && age < 20
-        vertexes = graph.traversal().V()
-                   .hasLabel("person")
-                   .has("age", P.inside(21, 20))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.inside(21, 20)).toList();
 
         Assert.assertEquals(0, vertexes.size());
     }
@@ -1355,10 +1501,8 @@ public class VertexCoreTest extends BaseCoreTest {
         init5Persons();
 
         // 3 <= age && age < 19 (that's age == 3)
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person")
-                                .has("age", P.between(3, 19))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.between(3, 19)).toList();
 
         Assert.assertEquals(1, vertexes.size());
     }
@@ -1372,17 +1516,14 @@ public class VertexCoreTest extends BaseCoreTest {
         init5Persons();
 
         // 19 <= age && age < 21
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person")
-                                .has("age", P.between(19, 21))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.between(19, 21)).toList();
 
         Assert.assertEquals(3, vertexes.size());
 
         // 3 <= age && age < 21
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.between(3, 21))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.between(3, 21)).toList();
 
         Assert.assertEquals(4, vertexes.size());
     }
@@ -1396,26 +1537,335 @@ public class VertexCoreTest extends BaseCoreTest {
         init5Persons();
 
         // 4 <= age && age < 19
-        List<Vertex> vertexes = graph.traversal().V()
-                                .hasLabel("person")
-                                .has("age", P.between(4, 19))
-                                .toList();
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("person")
+                                     .has("age", P.between(4, 19)).toList();
 
         Assert.assertEquals(0, vertexes.size());
 
         // 3 <= age && age < 3
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.between(3, 3))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.between(3, 3)).toList();
 
         Assert.assertEquals(0, vertexes.size());
 
         // 21 <= age && age < 20
-        vertexes = graph.traversal().V()
-                   .hasLabel("person").has("age", P.between(21, 20))
-                   .toList();
+        vertexes = graph.traversal().V().hasLabel("person")
+                        .has("age", P.between(21, 20)).toList();
 
         Assert.assertEquals(0, vertexes.size());
+    }
+
+    @Test
+    public void testQueryByIntProperty() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("int").asInt().create();
+        schema.vertexLabel("number").primaryKeys("id")
+              .properties("id", "int").create();
+        schema.indexLabel("numberByInt").range()
+              .onV("number").by("int").create();
+
+        graph().addVertex(T.label, "number", "id", 1, "int", 0);
+        graph().addVertex(T.label, "number", "id", 2, "int", 12345678);
+        graph().addVertex(T.label, "number", "id", 3, "int", 1000000001L);
+        graph().addVertex(T.label, "number", "id", 4, "int", -1);
+        graph().addVertex(T.label, "number", "id", 5, "int", Integer.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 6, "int", Integer.MIN_VALUE);
+
+        graph().tx().commit();
+
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("number")
+                                     .has("int", 0).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 1, "int", 0);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("int", 12345678).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 2, "int", 12345678);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("int", 1000000001L).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 3, "int", 1000000001);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("int", -1).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 4, "int", -1);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("int", Integer.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 5,
+                       "int", Integer.MAX_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("int", Integer.MIN_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 6,
+                       "int", Integer.MIN_VALUE);
+    }
+
+    @Test
+    public void testQueryByLongProperty() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("long").asLong().create();
+        schema.vertexLabel("number").primaryKeys("id")
+              .properties("id", "long").create();
+        schema.indexLabel("numberByLong").range()
+              .onV("number").by("long").create();
+
+        graph().addVertex(T.label, "number", "id", 1, "long", 0L);
+        graph().addVertex(T.label, "number", "id", 2, "long", 7L);
+        graph().addVertex(T.label, "number", "id", 3, "long", 1000000001);
+        graph().addVertex(T.label, "number", "id", 4, "long", -1L);
+        graph().addVertex(T.label, "number", "id", 5, "long", Long.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 6, "long", Long.MIN_VALUE);
+        long precisionLong = 9000000000000654321L;
+        graph().addVertex(T.label, "number", "id", 7, "long", precisionLong);
+
+        graph().tx().commit();
+
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("number")
+                                     .has("long", 0).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 1, "long", 0L);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("long", 7).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 2, "long", 7L);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("long", 1000000001).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 3,
+                       "long", 1000000001L);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("long", -1).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 4, "long", -1L);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("long", Long.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 5,
+                       "long", Long.MAX_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("long", Long.MIN_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 6,
+                       "long", Long.MIN_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("long", precisionLong).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 7,
+                       "long", precisionLong);
+    }
+
+    @Test
+    public void testQueryByFloatProperty() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("float").asFloat().create();
+        schema.vertexLabel("number").primaryKeys("id")
+              .properties("id", "float").create();
+        schema.indexLabel("numberByFloat").range()
+              .onV("number").by("float").create();
+
+        graph().addVertex(T.label, "number", "id", 1, "float", 7);
+        graph().addVertex(T.label, "number", "id", 2, "float", 3.14f);
+        graph().addVertex(T.label, "number", "id", 3, "float", 3.1415926f);
+        graph().addVertex(T.label, "number", "id", 4, "float", 1234.56d);
+        graph().addVertex(T.label, "number", "id", 5,
+                          "float", Float.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 6,
+                          "float", -Float.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 7,
+                          "float", Float.MIN_VALUE);
+        graph().addVertex(T.label, "number", "id", 8,
+                          "float", -Float.MIN_VALUE);
+
+        graph().tx().commit();
+
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("number")
+                                     .has("float", 7).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 1, "float", 7f);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", 3.14f).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 2, "float", 3.14f);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", 3.1415926f).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 3,
+                       "float", 3.1415926f);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", 1234.56d).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 4, "float", 1234.56f);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", Float.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 5,
+                       "float", Float.MAX_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", -Float.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 6,
+                       "float", -Float.MAX_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", Float.MIN_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 7,
+                       "float", Float.MIN_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("float", -Float.MIN_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 8,
+                       "float", -Float.MIN_VALUE);
+    }
+
+    @Test
+    public void testQueryByDoubleProperty() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("double").asDouble().create();
+        schema.vertexLabel("number").primaryKeys("id")
+              .properties("id", "double").create();
+        schema.indexLabel("numberByDouble").range()
+              .onV("number").by("double").create();
+
+        graph().addVertex(T.label, "number", "id", 1, "double", 7);
+        graph().addVertex(T.label, "number", "id", 2, "double", 3.14d);
+        graph().addVertex(T.label, "number", "id", 3, "double", 3.1415926d);
+        graph().addVertex(T.label, "number", "id", 4, "double", 1234.56f);
+        graph().addVertex(T.label, "number", "id", 5,
+                          "double", Float.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 6,
+                          "double", -Float.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 7,
+                          "double", Double.MAX_VALUE / 2);
+        graph().addVertex(T.label, "number", "id", 8,
+                          "double", -Double.MAX_VALUE / 2);
+
+        graph().tx().commit();
+
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("number")
+                                     .has("double", 7).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 1, "double", 7d);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", 3.14d).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 2, "double", 3.14d);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", 3.1415926d).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 3,
+                       "double", 3.1415926d);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", 1234.56f).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 4,
+                       "double", 1234.56d);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", Float.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 5, "double",
+                       Double.valueOf(String.valueOf(Float.MAX_VALUE)));
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", -Float.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 6, "double",
+                       Double.valueOf(String.valueOf(-Float.MAX_VALUE)));
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", Double.MAX_VALUE / 2).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 7,
+                       "double", Double.MAX_VALUE / 2);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", -Double.MAX_VALUE / 2).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 8,
+                       "double", -Double.MAX_VALUE / 2);
+    }
+
+    //@Test
+    public void testQueryByDoublePropertyWithMinMaxValue() {
+        HugeGraph graph = graph();
+
+        SchemaManager schema = graph.schema();
+        schema.propertyKey("double").asDouble().create();
+        schema.vertexLabel("number").primaryKeys("id")
+              .properties("id", "double").create();
+        schema.indexLabel("numberByDouble").range()
+              .onV("number").by("double").create();
+
+        graph().addVertex(T.label, "number", "id", 0, "double", 0);
+        graph().addVertex(T.label, "number", "id", 1,
+                          "double", Double.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 2,
+                          "double", -Double.MAX_VALUE);
+        graph().addVertex(T.label, "number", "id", 3,
+                          "double", Double.MIN_VALUE);
+        graph().addVertex(T.label, "number", "id", 4,
+                          "double", -Double.MIN_VALUE);
+
+        graph().tx().commit();
+
+        List<Vertex> vertexes = graph.traversal().V().hasLabel("number")
+                                     .has("double", 0).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 0, "double", 0d);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", Double.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 1,
+                       "double", Double.MAX_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", -Double.MAX_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 2,
+                       "double", -Double.MAX_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", Double.MIN_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 3,
+                       "double", Double.MIN_VALUE);
+
+        vertexes = graph.traversal().V().hasLabel("number")
+                        .has("double", -Double.MIN_VALUE).toList();
+        Assert.assertEquals(1, vertexes.size());
+        assertContains(vertexes, T.label, "number", "id", 4,
+                       "double", -Double.MIN_VALUE);
     }
 
     @Test
@@ -1490,7 +1940,7 @@ public class VertexCoreTest extends BaseCoreTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testQueryByUnionHasDate() {
+    public void testQuerytestQueryByDatePropertyWithUnion() {
         HugeGraph graph = graph();
         initPersonIndex(false);
         init5Persons();
@@ -4264,13 +4714,11 @@ public class VertexCoreTest extends BaseCoreTest {
 
     private static void assertContains(List<Vertex> vertices,
                                        Object... keyValues) {
-        Assert.assertTrue(Utils.contains(vertices,
-                          new FakeVertex(keyValues)));
+        Assert.assertTrue(Utils.contains(vertices, new FakeVertex(keyValues)));
     }
 
     private static void assertNotContains(List<Vertex> vertices,
                                           Object... keyValues) {
-        Assert.assertFalse(Utils.contains(vertices,
-                           new FakeVertex(keyValues)));
+        Assert.assertFalse(Utils.contains(vertices, new FakeVertex(keyValues)));
     }
 }
